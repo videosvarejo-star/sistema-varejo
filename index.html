@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle e Prospecção - Varejo LED Truck</title>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -23,7 +25,7 @@
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             color: var(--text-color);
         }
         #loading-overlay {
@@ -41,14 +43,14 @@
         .master-container { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
         .master-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
         .master-header .title-wrapper { cursor: pointer; flex-grow: 1; }
-        .master-header h2 { margin: 0; text-align: left; }
+        .master-header h2 { margin: 0; text-align: left; font-size: 1.5em; }
 
         .content-area { padding: 0 20px 1px 20px; max-height: 5000px; transition: all 0.4s ease-in-out; }
         .master-container.collapsed .content-area { max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; }
         .grade { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
         .grade-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
         .grade-title { display: flex; align-items: center; gap: 15px; cursor: pointer; flex-grow: 1; }
-        .grade-title h2 { margin: 0; font-size: 1.6em; }
+        .grade-title h2 { margin: 0; font-size: 1.2em; }
         .toggle-btn { background: none; border: none; cursor: pointer; font-size: 1.5em; transition: transform 0.3s ease; color: var(--secondary-color); }
         .collapsed .toggle-btn { transform: rotate(-90deg); }
         .grade-content { padding: 0 20px 20px 20px; max-height: 1000px; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out; border-top: 1px solid var(--border-color); }
@@ -63,7 +65,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: white; }
         th, td { border: 1px solid var(--border-color); padding: 12px; text-align: left; }
         th { background-color: var(--header-bg); font-weight: 500; }
-        td input, td select { width: 95%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; background-color: white;}
+        td input, td select { box-sizing: border-box; width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; background-color: white;}
         
         .controls { text-align: center; padding: 10px 0 20px 0; }
         .add-btn { background-color: var(--primary-color); color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; }
@@ -78,20 +80,92 @@
         .hour-label { background-color: var(--header-bg); font-weight: 500; font-size: 0.9em; }
         .time-slot { background-color: #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
         
-        .scheduled-item { background-color: var(--primary-color); color: white; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; padding: 2px; text-align: center; line-height: 1.2; }
+        .scheduled-item { background-color: var(--primary-color); color: white; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; padding: 2px; text-align: center; line-height: 1.2; box-sizing: border-box; }
         .scheduled-item.exclusive-item { background-color: var(--secondary-color); }
-        .main-info { font-weight: 500; font-size: 1em; }
+        .main-info { font-weight: 500; font-size: 1em; word-break: break-all; }
         .exclusive-item .main-info { font-size: 0.9em; }
         .time-obs { font-size: 0.8em; opacity: 0.9; font-style: italic; }
 
         .delete-prospect-btn { background: none; border: none; cursor: pointer; font-size: 1.2em; }
+        
+        #schedule-mobile { display: none; }
+
+        @media (max-width: 768px) {
+            body { padding: 5px; }
+            h1 { font-size: 1.5em;}
+            h2 { font-size: 1.2em; }
+            .master-header { padding: 15px; }
+            .header-buttons button { font-size: 12px; padding: 6px 8px; margin-left: 5px;}
+
+            table, thead, tbody, th, td, tr { 
+                display: block; 
+            }
+            thead tr { 
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            tr {
+                border: 1px solid var(--border-color);
+                margin-bottom: 10px;
+                border-radius: 5px;
+            }
+            td { 
+                border: none;
+                border-bottom: 1px solid #eee; 
+                position: relative;
+                padding-left: 45% !important; 
+                text-align: right;
+                min-height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+            td:before { 
+                content: attr(data-label);
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                left: 10px;
+                width: 40%; 
+                padding-right: 10px; 
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+            }
+            .grade-content td:last-child, #prospects-table td:last-child { border-bottom: none; }
+            td input, td select { width: 55%; padding: 6px; }
+
+            #schedule-grid { display: none; }
+            #schedule-mobile { display: block; }
+            
+            .mobile-day-header {
+                background-color: var(--primary-color); color: white;
+                padding: 15px; margin-top: 5px; border-radius: 5px;
+                cursor: pointer; font-weight: bold;
+                display: flex; justify-content: space-between; align-items: center;
+            }
+            .mobile-day-header::after { content: '▼'; font-size: 0.8em; transition: transform 0.3s; }
+            .mobile-day-header.active::after { transform: rotate(180deg); }
+            
+            .mobile-day-content {
+                display: none;
+                padding: 0 10px;
+                border: 1px solid var(--border-color);
+                border-top: none;
+                border-radius: 0 0 5px 5px;
+            }
+            .mobile-day-content.active { display: block; }
+            
+            .mobile-time-slot { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 5px 0; }
+            .mobile-time-slot:last-child { border-bottom: none; }
+            .mobile-hour-label { font-weight: 500; }
+            .mobile-slot-content { width: 70%; min-height: 45px; background-color: #f0f0f0; border-radius: 4px; cursor: pointer; }
+        }
     </style>
 </head>
 <body>
-    <div id="loading-overlay">
-        <div class="spinner"></div>
-        Carregando dados da nuvem...
-    </div>
+    <div id="loading-overlay">Carregando...</div>
 
     <div class="container">
         <header><img id="logo" src="logo.png" alt="Logo Varejo Led Truck"><h1>Painel de Controle</h1></header>
@@ -106,34 +180,31 @@
                 <div class="controls"><button id="add-grade-btn" class="add-btn">Adicionar Nova Grade</button></div>
             </div>
         </div>
-
         <div class="master-container" id="prospects-master-container">
             <div class="master-header">
                 <div class="title-wrapper"><h2>Clientes / Prospecção</h2></div>
-                <div class="header-buttons">
-                    <button class="export-btn" id="prospects-export-btn">Gerar Arquivo</button>
-                    <button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button>
-                </div>
+                <div class="header-buttons"><button class="export-btn" id="prospects-export-btn">Gerar Arquivo</button><button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button></div>
             </div>
             <div class="content-area">
                 <table id="prospects-table">
-                    <thead><tr><th style="width: 20%;">Nome da Empresa</th><th style="width: 20%;">Cliente</th><th style="width: 15%;">Telefone</th><th style="width: 20%;">Status</th><th>Observações</th><th style="width: 5%;">Ações</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Nome da Empresa</th><th>Cliente</th><th>Telefone</th><th>Status</th><th>Observações</th><th>Ações</th>
+                        </tr>
+                    </thead>
                     <tbody id="prospects-table-body"></tbody>
                 </table>
                 <div class="controls"><button id="add-prospect-btn" class="add-btn">Adicionar Cliente em Prospecção</button></div>
             </div>
         </div>
-        
         <div class="master-container" id="schedule-container">
             <div class="master-header">
                 <div class="title-wrapper"><h2>Cronograma Semanal</h2></div>
-                <div class="header-buttons">
-                    <button class="export-btn" id="schedule-export-btn">Gerar Arquivo</button>
-                    <button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button>
-                </div>
+                <div class="header-buttons"><button class="export-btn" id="schedule-export-btn">Gerar Arquivo</button><button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button></div>
             </div>
             <div class="content-area schedule-content">
                 <div id="schedule-grid"></div>
+                <div id="schedule-mobile"></div>
             </div>
         </div>
         <p id="save-status"></p>
@@ -157,20 +228,17 @@
             </div>
         </div>
     </div>
-
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // =================================================================================
-            // URL DO SEU APLICATIVO DA WEB INSERIDA AQUI!
-            // =================================================================================
             const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJc4lkF-YbADPD8MUi8VcBshIcfo8itPP1i79Mp6br-2JKeH5mjEZ7xELkMzF2ae-fOg/exec';
-            // =================================================================================
-
+            
             const loadingOverlay = document.getElementById('loading-overlay');
             const saveStatus = document.getElementById('save-status');
             const gradesContainer = document.getElementById('grades-container');
             const addGradeBtn = document.getElementById('add-grade-btn');
             const scheduleGrid = document.getElementById('schedule-grid');
+            const scheduleMobileContainer = document.getElementById('schedule-mobile');
             const prospectsTableBody = document.getElementById('prospects-table-body');
             const addProspectBtn = document.getElementById('add-prospect-btn');
             const modalOverlay = document.getElementById('modal-overlay');
@@ -199,20 +267,21 @@
                     gradesContainer.innerHTML = '';
                     prospectsTableBody.innerHTML = '';
                     
-                    if (allData.grades && allData.grades.length > 0) {
-                        allData.grades.forEach(gradeData => gradesContainer.appendChild(createGradeElement(gradeData)));
-                    } else { addGrade(); }
+                    if (allData.grades && allData.grades.length > 0) allData.grades.forEach(gradeData => gradesContainer.appendChild(createGradeElement(gradeData)));
+                    else addGrade();
 
-                    if (allData.prospects && allData.prospects.length > 0) {
-                        allData.prospects.forEach(prospectData => prospectsTableBody.appendChild(createProspectRow(prospectData)));
-                    } else { addProspectRow(); }
+                    if (allData.prospects && allData.prospects.length > 0) allData.prospects.forEach(prospectData => prospectsTableBody.appendChild(createProspectRow(prospectData)));
+                    else addProspectRow();
                     
-                    document.querySelectorAll('.time-slot').forEach(slot => slot.innerHTML = '');
+                    const allSlots = document.querySelectorAll('.time-slot');
+                    allSlots.forEach(slot => slot.innerHTML = '');
+
                     if (allData.schedule) {
                         Object.keys(allData.schedule).forEach(key => {
                             const [day, hour] = key.split('-');
-                            const slot = document.querySelector(`.time-slot[data-day='${day}'][data-hour='${hour}']`);
-                            if (slot) renderScheduleItem(slot, allData.schedule[key]);
+                            document.querySelectorAll(`.time-slot[data-day='${day}'][data-hour='${hour}']`).forEach(slot => {
+                                renderScheduleItem(slot, allData.schedule[key]);
+                            });
                         });
                     }
                     
@@ -279,8 +348,8 @@
                 if (gradeData.isCollapsed) gradeDiv.classList.add('collapsed');
                 gradeDiv.dataset.id = gradeData.id;
                 const tableRows = (gradeData.advertisers.length > 0 ? gradeData.advertisers : Array(8).fill({}))
-                    .map((ad, i) => `<tr><td>${i + 1}</td><td><input type="text" placeholder="Nome da Empresa" value="${ad.empresa || ''}"></td><td><input type="text" placeholder="Nome do Contato" value="${ad.cliente || ''}"></td><td><input type="text" placeholder="(XX) XXXXX-XXXX" value="${ad.telefone || ''}"></td><td><input type="date" value="${ad.inicioContrato || ''}"></td><td><input type="date" value="${ad.fimContrato || ''}"></td></tr>`).join('');
-                gradeDiv.innerHTML = `<div class="grade-header"><div class="grade-title"><button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button><h2>Grade ${gradeData.id}</h2></div><div class="header-buttons"><button class="export-btn">Gerar Arquivo</button><button class="delete-grade-btn">Excluir Grade</button></div></div><div class="grade-content"><table><thead><tr><th style="width: 5%;">Slot</th><th style="width: 25%;">Nome da Empresa</th><th style="width: 20%;">Cliente</th><th style="width: 15%;">Telefone</th><th style="width: 17%;">Início Contrato</th><th style="width: 17%;">Final Contrato</th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
+                    .map((ad, i) => `<tr><td data-label="Slot">${i + 1}</td><td data-label="Empresa"><input type="text" placeholder="Nome da Empresa" value="${ad.empresa || ''}"></td><td data-label="Cliente"><input type="text" placeholder="Nome do Contato" value="${ad.cliente || ''}"></td><td data-label="Telefone"><input type="text" placeholder="(XX) XXXXX-XXXX" value="${ad.telefone || ''}"></td><td data-label="Início"><input type="date" value="${ad.inicioContrato || ''}"></td><td data-label="Fim"><input type="date" value="${ad.fimContrato || ''}"></td></tr>`).join('');
+                gradeDiv.innerHTML = `<div class="grade-header"><div class="grade-title"><button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button><h2>Grade ${gradeData.id}</h2></div><div class="header-buttons"><button class="export-btn">Gerar Arquivo</button><button class="delete-grade-btn">Excluir Grade</button></div></div><div class="grade-content"><table><thead><tr><th>Slot</th><th>Empresa</th><th>Cliente</th><th>Telefone</th><th>Início Contrato</th><th>Final Contrato</th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
                 gradeDiv.querySelector('.grade-title').addEventListener('click', e => { gradeDiv.classList.toggle('collapsed'); triggerSave(); });
                 gradeDiv.querySelector('.delete-grade-btn').addEventListener('click', e => { e.stopPropagation(); if (confirm(`Tem certeza?`)) { gradeDiv.remove(); triggerSave(); } });
                 gradeDiv.querySelector('.export-btn').addEventListener('click', e => { e.stopPropagation(); generateImage(gradeDiv.querySelector('.grade-content'), `grade_${gradeData.id}.jpg`); });
@@ -291,18 +360,19 @@
                 const tr = document.createElement('tr');
                 const statusOptions = ['Em negociação', 'Enviar mensagem', 'Contrato fechado', 'Não tem interesse', 'Entrar em contato no próximo mês'];
                 const optionsHTML = statusOptions.map(opt => `<option value="${opt}" ${prospectData.status === opt ? 'selected' : ''}>${opt}</option>`).join('');
-                tr.innerHTML = `<td><input type="text" placeholder="Nome da Empresa" value="${prospectData.empresa || ''}"></td><td><input type="text" placeholder="Nome do Contato" value="${prospectData.cliente || ''}"></td><td><input type="text" placeholder="(XX) XXXXX-XXXX" value="${prospectData.telefone || ''}"></td><td><select>${optionsHTML}</select></td><td><input type="text" placeholder="Observações..." value="${prospectData.observacao || ''}"></td><td><button class="delete-prospect-btn">🗑️</button></td>`;
+                tr.innerHTML = `<td data-label="Empresa"><input type="text" placeholder="Nome da Empresa" value="${prospectData.empresa || ''}"></td><td data-label="Cliente"><input type="text" placeholder="Nome do Contato" value="${prospectData.cliente || ''}"></td><td data-label="Telefone"><input type="text" placeholder="(XX) XXXXX-XXXX" value="${prospectData.telefone || ''}"></td><td data-label="Status"><select>${optionsHTML}</select></td><td data-label="Observações"><input type="text" placeholder="Observações..." value="${prospectData.observacao || ''}"></td><td data-label="Ações"><button class="delete-prospect-btn">🗑️</button></td>`;
                 tr.querySelector('.delete-prospect-btn').addEventListener('click', () => { if (confirm('Deseja excluir este cliente da prospecção?')) { tr.remove(); triggerSave(); } });
                 return tr;
             }
 
             function createScheduleGrid() {
-                const days = ["", "Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+                const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+                scheduleGrid.innerHTML = '';
                 scheduleGrid.appendChild(Object.assign(document.createElement('div'), { className: 'grid-header' }));
-                days.slice(1).forEach(day => scheduleGrid.appendChild(Object.assign(document.createElement('div'), { className: 'grid-header', textContent: day })));
+                days.forEach(day => scheduleGrid.appendChild(Object.assign(document.createElement('div'), { className: 'grid-header', textContent: day })));
                 for (let hour = 9; hour < 19; hour++) {
                     scheduleGrid.appendChild(Object.assign(document.createElement('div'), { className: 'hour-label', textContent: `${String(hour).padStart(2, '0')} às ${String(hour + 1).padStart(2, '0')}h` }));
-                    days.slice(1).forEach(day => {
+                    days.forEach(day => {
                         const slot = Object.assign(document.createElement('div'), { className: 'time-slot' });
                         slot.dataset.day = day; slot.dataset.hour = hour;
                         scheduleGrid.appendChild(slot);
@@ -310,6 +380,46 @@
                 }
             }
             
+            function createMobileSchedule() {
+                const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+                scheduleMobileContainer.innerHTML = '';
+                days.forEach(day => {
+                    const dayWrapper = document.createElement('div');
+                    const header = document.createElement('div');
+                    header.className = 'mobile-day-header';
+                    header.textContent = day;
+                    const content = document.createElement('div');
+                    content.className = 'mobile-day-content';
+                    for (let hour = 9; hour < 19; hour++) {
+                        const slotWrapper = document.createElement('div');
+                        slotWrapper.className = 'mobile-time-slot';
+                        const hourLabel = document.createElement('div');
+                        hourLabel.className = 'mobile-hour-label';
+                        hourLabel.textContent = `${String(hour).padStart(2, '0')}h`;
+                        const slot = document.createElement('div');
+                        slot.className = 'mobile-slot-content time-slot';
+                        slot.dataset.day = day;
+                        slot.dataset.hour = hour;
+                        slotWrapper.appendChild(hourLabel);
+                        slotWrapper.appendChild(slot);
+                        content.appendChild(slotWrapper);
+                    }
+                    header.addEventListener('click', () => {
+                        document.querySelectorAll('.mobile-day-content.active').forEach(activeContent => {
+                            if(activeContent !== content) {
+                                activeContent.classList.remove('active');
+                                activeContent.previousElementSibling.classList.remove('active');
+                            }
+                        });
+                        content.classList.toggle('active');
+                        header.classList.toggle('active');
+                    });
+                    dayWrapper.appendChild(header);
+                    dayWrapper.appendChild(content);
+                    scheduleMobileContainer.appendChild(dayWrapper);
+                });
+            }
+
             function parseVisibleObservation(observation) {
                 if (!observation) return '';
                 const keywords = ['15 min', '30 min', '45 min'];
@@ -372,7 +482,6 @@
                 });
             }
 
-            // --- LISTENERS DE EVENTOS ---
             document.querySelectorAll('.master-container').forEach(container => {
                 const header = container.querySelector('.master-header');
                 header.addEventListener('click', (e) => {
@@ -383,17 +492,13 @@
                 });
             });
 
-            scheduleGrid.addEventListener('click', e => {
+            document.getElementById('schedule-container').addEventListener('click', e => {
                 const slot = e.target.closest('.time-slot');
-                if (!slot) return;
-                const existingItem = slot.querySelector('.scheduled-item');
-                if (existingItem) {
-                    if (confirm(`Deseja remover o agendamento "${existingItem.querySelector('.main-info').textContent}"?`)) { 
-                        slot.innerHTML = ''; 
-                        delete slot.dataset.scheduleInfo;
-                        triggerSave(); 
-                    }
-                } else { openScheduleModal(slot); }
+                if (slot) {
+                    const existingItem = slot.querySelector('.scheduled-item');
+                    if (existingItem) { if (confirm(`Deseja remover o agendamento "${existingItem.querySelector('.main-info').textContent}"?`)) { slot.innerHTML = ''; delete slot.dataset.scheduleInfo; triggerSave(); }
+                    } else { openScheduleModal(slot); }
+                }
             });
             
             gradeList.addEventListener('click', e => {
@@ -427,16 +532,23 @@
             addGradeBtn.addEventListener('click', () => { addGrade(); triggerSave(); });
             addProspectBtn.addEventListener('click', () => { addProspectRow(); triggerSave(); });
             
-            document.getElementById('grades-container').addEventListener('input', () => triggerSave());
+            gradesContainer.addEventListener('input', () => triggerSave());
             prospectsTableBody.addEventListener('input', () => triggerSave());
             
             modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) modalOverlay.style.display = 'none'; });
             
             document.getElementById('prospects-export-btn').addEventListener('click', (e) => { e.stopPropagation(); generateImage(document.getElementById('prospects-table'), 'prospecção.jpg'); });
-            document.getElementById('schedule-export-btn').addEventListener('click', (e) => { e.stopPropagation(); generateImage(document.getElementById('schedule-grid'), 'cronograma_semanal.jpg'); });
+            document.getElementById('schedule-export-btn').addEventListener('click', (e) => { 
+                e.stopPropagation(); 
+                if (window.innerWidth <= 768) {
+                    generateImage(document.getElementById('schedule-mobile'), 'cronograma_semanal.jpg');
+                } else {
+                    generateImage(document.getElementById('schedule-grid'), 'cronograma_semanal.jpg');
+                }
+            });
 
-            // --- INICIALIZAÇÃO ---
             createScheduleGrid();
+            createMobileSchedule();
             loadData();
         });
     </script>
