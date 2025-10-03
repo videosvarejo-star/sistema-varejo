@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle e Prospecção - Varejo LED Truck</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --surface-color: #ffffff;
+            --text-color: #000000;
+            --primary-color: #000000;
+            --secondary-color: #555555;
+            --border-color: #dddddd;
+            --header-bg: #f0f0f0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2000; font-size: 1.2em; font-weight: bold;
+            flex-direction: column; gap: 10px;
+        }
+        .container { max-width: 1300px; margin: 0 auto; }
+        header { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; flex-direction: column; }
+        #logo { max-width: 250px; margin-bottom: 10px; }
+        h1, h2 { color: var(--text-color); text-align: center; margin: 5px 0 20px 0; }
+        
+        .master-container { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .master-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
+        .master-header .title-wrapper { cursor: pointer; flex-grow: 1; }
+        .master-header h2 { margin: 0; text-align: left; }
+
+        .content-area { padding: 0 20px 1px 20px; max-height: 5000px; transition: all 0.4s ease-in-out; }
+        .master-container.collapsed .content-area { max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; }
+        .grade { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .grade-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
+        .grade-title { display: flex; align-items: center; gap: 15px; cursor: pointer; flex-grow: 1; }
+        .grade-title h2 { margin: 0; font-size: 1.6em; }
+        .toggle-btn { background: none; border: none; cursor: pointer; font-size: 1.5em; transition: transform 0.3s ease; color: var(--secondary-color); }
+        .collapsed .toggle-btn { transform: rotate(-90deg); }
+        .grade-content { padding: 0 20px 20px 20px; max-height: 1000px; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out; border-top: 1px solid var(--border-color); }
+        .grade.collapsed .grade-content { max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; border-top: none; }
+        .header-buttons { display: flex; align-items: center; }
+        .header-buttons button { border: 1px solid; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: 500; font-size: 14px; margin-left: 10px; transition: all 0.2s ease; }
+        .export-btn { background-color: #3498db; color: white; border-color: #3498db; }
+        .export-btn:hover { background-color: #2980b9; }
+        .delete-grade-btn { background-color: transparent; color: var(--primary-color); border-color: var(--primary-color); }
+        .delete-grade-btn:hover { background-color: #e74c3c; color: white; border-color: #e74c3c;}
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: white; }
+        th, td { border: 1px solid var(--border-color); padding: 12px; text-align: left; }
+        th { background-color: var(--header-bg); font-weight: 500; }
+        td input, td select { width: 95%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; background-color: white;}
+        
+        .controls { text-align: center; padding: 10px 0 20px 0; }
+        .add-btn { background-color: var(--primary-color); color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; }
+        
+        #save-status { text-align: center; color: #888; font-style: italic; height: 20px; }
+
+        .schedule-content { padding: 0 20px 20px 20px; max-height: 1000px; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out, border 0.2s linear; border-top: 1px solid var(--border-color); }
+        .master-container.collapsed .schedule-content { max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; border-top: none; }
+        #schedule-grid { display: grid; grid-template-columns: 90px repeat(5, 1fr); gap: 5px; margin-top: 20px; background-color: white; }
+        .grid-header, .time-slot, .hour-label { padding: 10px; text-align: center; border-radius: 4px; min-height: 45px; display: flex; align-items: center; justify-content: center; }
+        .grid-header { background-color: var(--primary-color); color: white; font-weight: 500; }
+        .hour-label { background-color: var(--header-bg); font-weight: 500; font-size: 0.9em; }
+        .time-slot { background-color: #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
+        
+        .scheduled-item { background-color: var(--primary-color); color: white; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; padding: 2px; text-align: center; line-height: 1.2; }
+        .scheduled-item.exclusive-item { background-color: var(--secondary-color); }
+        .main-info { font-weight: 500; font-size: 1em; }
+        .exclusive-item .main-info { font-size: 0.9em; }
+        .time-obs { font-size: 0.8em; opacity: 0.9; font-style: italic; }
+
+        .delete-prospect-btn { background: none; border: none; cursor: pointer; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        Carregando dados da nuvem...
+    </div>
+
+    <div class="container">
+        <header><img id="logo" src="logo.png" alt="Logo Varejo Led Truck"><h1>Painel de Controle</h1></header>
+        
+        <div class="master-container" id="grades-master-container">
+            <div class="master-header">
+                <div class="title-wrapper"><h2>Gerenciamento de Grades</h2></div>
+                <div class="header-buttons"><button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button></div>
+            </div>
+            <div class="content-area">
+                <div id="grades-container"></div>
+                <div class="controls"><button id="add-grade-btn" class="add-btn">Adicionar Nova Grade</button></div>
+            </div>
+        </div>
+
+        <div class="master-container" id="prospects-master-container">
+            <div class="master-header">
+                <div class="title-wrapper"><h2>Clientes / Prospecção</h2></div>
+                <div class="header-buttons">
+                    <button class="export-btn" id="prospects-export-btn">Gerar Arquivo</button>
+                    <button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button>
+                </div>
+            </div>
+            <div class="content-area">
+                <table id="prospects-table">
+                    <thead><tr><th style="width: 20%;">Nome da Empresa</th><th style="width: 20%;">Cliente</th><th style="width: 15%;">Telefone</th><th style="width: 20%;">Status</th><th>Observações</th><th style="width: 5%;">Ações</th></tr></thead>
+                    <tbody id="prospects-table-body"></tbody>
+                </table>
+                <div class="controls"><button id="add-prospect-btn" class="add-btn">Adicionar Cliente em Prospecção</button></div>
+            </div>
+        </div>
+        
+        <div class="master-container" id="schedule-container">
+            <div class="master-header">
+                <div class="title-wrapper"><h2>Cronograma Semanal</h2></div>
+                <div class="header-buttons">
+                    <button class="export-btn" id="schedule-export-btn">Gerar Arquivo</button>
+                    <button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button>
+                </div>
+            </div>
+            <div class="content-area schedule-content">
+                <div id="schedule-grid"></div>
+            </div>
+        </div>
+        <p id="save-status"></p>
+    </div>
+
+    <div id="modal-overlay" style="display: none;">
+        <div id="grade-selector-modal">
+            <div id="selection-view">
+                <h3>Selecione uma Opção</h3>
+                <ul id="grade-list"></ul>
+                <div id="exclusive-option"><button id="exclusive-btn">Hora Exclusiva</button></div>
+            </div>
+            <div id="confirmation-view" style="display: none;">
+                <p id="selection-info"></p>
+                <input type="text" id="schedule-observation" placeholder="Observação (ou clique nas opções abaixo)">
+                <div id="quick-obs-container">
+                    <button type="button" class="quick-obs-btn">15 min</button><button type="button" class="quick-obs-btn">30 min</button><button type="button" class="quick-obs-btn">45 min</button>
+                    <button type="button" class="quick-obs-btn">1ª Metade</button><button type="button" class="quick-obs-btn">2ª Metade</button>
+                </div>
+                <button id="confirm-schedule-btn">Confirmar Agendamento</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // =================================================================================
+            // URL DO SEU APLICATIVO DA WEB INSERIDA AQUI!
+            // =================================================================================
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJc4lkF-YbADPD8MUi8VcBshIcfo8itPP1i79Mp6br-2JKeH5mjEZ7xELkMzF2ae-fOg/exec';
+            // =================================================================================
+
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const saveStatus = document.getElementById('save-status');
+            const gradesContainer = document.getElementById('grades-container');
+            const addGradeBtn = document.getElementById('add-grade-btn');
+            const scheduleGrid = document.getElementById('schedule-grid');
+            const prospectsTableBody = document.getElementById('prospects-table-body');
+            const addProspectBtn = document.getElementById('add-prospect-btn');
+            const modalOverlay = document.getElementById('modal-overlay');
+            const gradeList = document.getElementById('grade-list');
+            const exclusiveBtn = document.getElementById('exclusive-btn');
+            const confirmScheduleBtn = document.getElementById('confirm-schedule-btn');
+            const selectionView = document.getElementById('selection-view');
+            const confirmationView = document.getElementById('confirmation-view');
+            const selectionInfo = document.getElementById('selection-info');
+            const scheduleObservationInput = document.getElementById('schedule-observation');
+            const quickObsContainer = document.getElementById('quick-obs-container');
+            let activeSlot = null;
+            let tempScheduleData = {};
+            let saveDataTimeout;
+
+            function showLoading(message) { loadingOverlay.innerHTML = `<div>${message}</div>`; loadingOverlay.style.display = 'flex'; }
+            function hideLoading() { loadingOverlay.style.display = 'none'; }
+            
+            async function loadData() {
+                showLoading('Carregando dados da nuvem...');
+                try {
+                    const response = await fetch(SCRIPT_URL);
+                    if (!response.ok) throw new Error(`Erro de rede: ${response.statusText}`);
+                    const allData = await response.json();
+                    
+                    gradesContainer.innerHTML = '';
+                    prospectsTableBody.innerHTML = '';
+                    
+                    if (allData.grades && allData.grades.length > 0) {
+                        allData.grades.forEach(gradeData => gradesContainer.appendChild(createGradeElement(gradeData)));
+                    } else { addGrade(); }
+
+                    if (allData.prospects && allData.prospects.length > 0) {
+                        allData.prospects.forEach(prospectData => prospectsTableBody.appendChild(createProspectRow(prospectData)));
+                    } else { addProspectRow(); }
+                    
+                    document.querySelectorAll('.time-slot').forEach(slot => slot.innerHTML = '');
+                    if (allData.schedule) {
+                        Object.keys(allData.schedule).forEach(key => {
+                            const [day, hour] = key.split('-');
+                            const slot = document.querySelector(`.time-slot[data-day='${day}'][data-hour='${hour}']`);
+                            if (slot) renderScheduleItem(slot, allData.schedule[key]);
+                        });
+                    }
+                    
+                    if (allData.uiState) {
+                        document.getElementById('schedule-container').classList.toggle('collapsed', allData.uiState.scheduleCollapsed);
+                        document.getElementById('grades-master-container').classList.toggle('collapsed', allData.uiState.gradesMasterCollapsed);
+                        document.getElementById('prospects-master-container').classList.toggle('collapsed', allData.uiState.prospectsMasterCollapsed);
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar dados:', error);
+                    alert('NÃO FOI POSSÍVEL CARREGAR OS DADOS!\n\nVerifique:\n1. Sua conexão com a internet.\n2. Se a URL do Script está correta.\n3. Se as permissões da planilha e do script estão corretas (Qualquer pessoa).');
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            function triggerSave() {
+                saveStatus.textContent = 'Salvando...';
+                clearTimeout(saveDataTimeout);
+                saveDataTimeout = setTimeout(saveData, 1500);
+            }
+            
+            async function saveData() {
+                saveStatus.textContent = 'Salvando na nuvem...';
+                const gradesData = Array.from(document.querySelectorAll('.grade')).map(gradeEl => {
+                    const advertisers = Array.from(gradeEl.querySelectorAll('tbody tr')).map(row => ({ empresa: row.cells[1].querySelector('input').value, cliente: row.cells[2].querySelector('input').value, telefone: row.cells[3].querySelector('input').value, inicioContrato: row.cells[4].querySelector('input').value, fimContrato: row.cells[5].querySelector('input').value }));
+                    return { id: gradeEl.dataset.id, isCollapsed: gradeEl.classList.contains('collapsed'), advertisers };
+                });
+                const scheduleData = {};
+                document.querySelectorAll('.time-slot[data-schedule-info]').forEach(slot => {
+                    const key = `${slot.dataset.day}-${slot.dataset.hour}`;
+                    scheduleData[key] = JSON.parse(slot.dataset.scheduleInfo);
+                });
+                const prospectsData = Array.from(document.querySelectorAll('#prospects-table-body tr')).map(row => {
+                    const inputs = row.querySelectorAll('input, select');
+                    return { empresa: inputs[0].value, cliente: inputs[1].value, telefone: inputs[2].value, status: inputs[3].value, observacao: inputs[4].value };
+                });
+                const uiState = {
+                    scheduleCollapsed: document.getElementById('schedule-container').classList.contains('collapsed'),
+                    gradesMasterCollapsed: document.getElementById('grades-master-container').classList.contains('collapsed'),
+                    prospectsMasterCollapsed: document.getElementById('prospects-master-container').classList.contains('collapsed')
+                };
+                const dataToSave = { grades: gradesData, schedule: scheduleData, prospects: prospectsData, uiState: uiState };
+
+                try {
+                     await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8', },
+                        body: JSON.stringify(dataToSave)
+                    });
+                    saveStatus.textContent = 'Salvo na nuvem!';
+                } catch (error) {
+                    console.error('Erro ao salvar:', error);
+                    saveStatus.textContent = 'Erro ao salvar!';
+                } finally {
+                    setTimeout(() => { saveStatus.textContent = ''; }, 2000);
+                }
+            }
+
+            function createGradeElement(gradeData) {
+                const gradeDiv = document.createElement('div');
+                gradeDiv.className = 'grade';
+                if (gradeData.isCollapsed) gradeDiv.classList.add('collapsed');
+                gradeDiv.dataset.id = gradeData.id;
+                const tableRows = (gradeData.advertisers.length > 0 ? gradeData.advertisers : Array(8).fill({}))
+                    .map((ad, i) => `<tr><td>${i + 1}</td><td><input type="text" placeholder="Nome da Empresa" value="${ad.empresa || ''}"></td><td><input type="text" placeholder="Nome do Contato" value="${ad.cliente || ''}"></td><td><input type="text" placeholder="(XX) XXXXX-XXXX" value="${ad.telefone || ''}"></td><td><input type="date" value="${ad.inicioContrato || ''}"></td><td><input type="date" value="${ad.fimContrato || ''}"></td></tr>`).join('');
+                gradeDiv.innerHTML = `<div class="grade-header"><div class="grade-title"><button class="toggle-btn" title="Minimizar/Maximizar">&#9662;</button><h2>Grade ${gradeData.id}</h2></div><div class="header-buttons"><button class="export-btn">Gerar Arquivo</button><button class="delete-grade-btn">Excluir Grade</button></div></div><div class="grade-content"><table><thead><tr><th style="width: 5%;">Slot</th><th style="width: 25%;">Nome da Empresa</th><th style="width: 20%;">Cliente</th><th style="width: 15%;">Telefone</th><th style="width: 17%;">Início Contrato</th><th style="width: 17%;">Final Contrato</th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
+                gradeDiv.querySelector('.grade-title').addEventListener('click', e => { gradeDiv.classList.toggle('collapsed'); triggerSave(); });
+                gradeDiv.querySelector('.delete-grade-btn').addEventListener('click', e => { e.stopPropagation(); if (confirm(`Tem certeza?`)) { gradeDiv.remove(); triggerSave(); } });
+                gradeDiv.querySelector('.export-btn').addEventListener('click', e => { e.stopPropagation(); generateImage(gradeDiv.querySelector('.grade-content'), `grade_${gradeData.id}.jpg`); });
+                return gradeDiv;
+            }
+            
+            function createProspectRow(prospectData = {}) {
+                const tr = document.createElement('tr');
+                const statusOptions = ['Em negociação', 'Enviar mensagem', 'Contrato fechado', 'Não tem interesse', 'Entrar em contato no próximo mês'];
+                const optionsHTML = statusOptions.map(opt => `<option value="${opt}" ${prospectData.status === opt ? 'selected' : ''}>${opt}</option>`).join('');
+                tr.innerHTML = `<td><input type="text" placeholder="Nome da Empresa" value="${prospectData.empresa || ''}"></td><td><input type="text" placeholder="Nome do Contato" value="${prospectData.cliente || ''}"></td><td><input type="text" placeholder="(XX) XXXXX-XXXX" value="${prospectData.telefone || ''}"></td><td><select>${optionsHTML}</select></td><td><input type="text" placeholder="Observações..." value="${prospectData.observacao || ''}"></td><td><button class="delete-prospect-btn">🗑️</button></td>`;
+                tr.querySelector('.delete-prospect-btn').addEventListener('click', () => { if (confirm('Deseja excluir este cliente da prospecção?')) { tr.remove(); triggerSave(); } });
+                return tr;
+            }
+
+            function createScheduleGrid() {
+                const days = ["", "Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+                scheduleGrid.appendChild(Object.assign(document.createElement('div'), { className: 'grid-header' }));
+                days.slice(1).forEach(day => scheduleGrid.appendChild(Object.assign(document.createElement('div'), { className: 'grid-header', textContent: day })));
+                for (let hour = 9; hour < 19; hour++) {
+                    scheduleGrid.appendChild(Object.assign(document.createElement('div'), { className: 'hour-label', textContent: `${String(hour).padStart(2, '0')} às ${String(hour + 1).padStart(2, '0')}h` }));
+                    days.slice(1).forEach(day => {
+                        const slot = Object.assign(document.createElement('div'), { className: 'time-slot' });
+                        slot.dataset.day = day; slot.dataset.hour = hour;
+                        scheduleGrid.appendChild(slot);
+                    });
+                }
+            }
+            
+            function parseVisibleObservation(observation) {
+                if (!observation) return '';
+                const keywords = ['15 min', '30 min', '45 min'];
+                for (const keyword of keywords) { if (observation.includes(keyword)) return keyword; }
+                return '';
+            }
+
+            function renderScheduleItem(slot, scheduleData) {
+                slot.dataset.scheduleInfo = JSON.stringify(scheduleData);
+                const item = document.createElement('div');
+                item.className = 'scheduled-item';
+                if (scheduleData.type === 'exclusive') item.classList.add('exclusive-item');
+                if (scheduleData.observation) item.title = scheduleData.observation;
+                const mainInfo = document.createElement('span');
+                mainInfo.className = 'main-info';
+                mainInfo.textContent = scheduleData.value;
+                const timeObs = document.createElement('span');
+                timeObs.className = 'time-obs';
+                timeObs.textContent = parseVisibleObservation(scheduleData.observation);
+                item.appendChild(mainInfo); item.appendChild(timeObs);
+                slot.innerHTML = ''; slot.appendChild(item);
+            }
+            
+            function addGrade() {
+                const existingIds = Array.from(document.querySelectorAll('.grade')).map(g => parseInt(g.dataset.id, 10));
+                let newId = 1; while (existingIds.includes(newId)) newId++;
+                const newGradeData = { id: String(newId).padStart(2, '0'), advertisers: Array(8).fill({}), isCollapsed: false };
+                gradesContainer.appendChild(createGradeElement(newGradeData));
+            }
+            
+            function addProspectRow() { prospectsTableBody.appendChild(createProspectRow()); }
+
+            function openScheduleModal(slot) {
+                activeSlot = slot;
+                const existingGrades = Array.from(document.querySelectorAll('.grade')).map(g => g.dataset.id);
+                gradeList.innerHTML = existingGrades.length > 0 ? existingGrades.map(id => `<li>Grade ${id}</li>`).join('') : `<li>Nenhuma grade criada</li>`;
+                confirmationView.style.display = 'none';
+                selectionView.style.display = 'block';
+                modalOverlay.style.display = 'flex';
+            }
+
+            function proceedToConfirmation(data) {
+                tempScheduleData = data;
+                selectionInfo.textContent = data.type === 'grade' ? `Agendando: ${data.value}` : `Agendando: ${data.value}`;
+                scheduleObservationInput.value = '';
+                selectionView.style.display = 'none';
+                confirmationView.style.display = 'block';
+                scheduleObservationInput.focus();
+            }
+
+            function generateImage(element, filename) {
+                if (typeof html2canvas === 'undefined') { alert('Erro ao carregar biblioteca de exportação. Verifique sua conexão.'); return;}
+                html2canvas(element, { backgroundColor: '#ffffff' }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL('image/jpeg', 0.9);
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+            }
+
+            // --- LISTENERS DE EVENTOS ---
+            document.querySelectorAll('.master-container').forEach(container => {
+                const header = container.querySelector('.master-header');
+                header.addEventListener('click', (e) => {
+                    if (!e.target.closest('.header-buttons') || e.target.classList.contains('toggle-btn') || e.target.closest('.title-wrapper')) {
+                         container.classList.toggle('collapsed');
+                         triggerSave();
+                    }
+                });
+            });
+
+            scheduleGrid.addEventListener('click', e => {
+                const slot = e.target.closest('.time-slot');
+                if (!slot) return;
+                const existingItem = slot.querySelector('.scheduled-item');
+                if (existingItem) {
+                    if (confirm(`Deseja remover o agendamento "${existingItem.querySelector('.main-info').textContent}"?`)) { 
+                        slot.innerHTML = ''; 
+                        delete slot.dataset.scheduleInfo;
+                        triggerSave(); 
+                    }
+                } else { openScheduleModal(slot); }
+            });
+            
+            gradeList.addEventListener('click', e => {
+                if (e.target.tagName === 'LI' && !e.target.textContent.includes('Nenhuma')) {
+                    const gradeText = e.target.textContent;
+                    proceedToConfirmation({ type: 'grade', value: gradeText });
+                }
+            });
+
+            exclusiveBtn.addEventListener('click', () => {
+                const companyName = prompt('Digite o nome da empresa para a Hora Exclusiva:');
+                if (companyName && companyName.trim() !== '') { proceedToConfirmation({ type: 'exclusive', value: companyName.trim() }); }
+            });
+
+            confirmScheduleBtn.addEventListener('click', () => {
+                tempScheduleData.observation = scheduleObservationInput.value.trim();
+                renderScheduleItem(activeSlot, tempScheduleData);
+                modalOverlay.style.display = 'none'; 
+                triggerSave();
+            });
+
+            quickObsContainer.addEventListener('click', e => {
+                if (e.target.classList.contains('quick-obs-btn')) {
+                    const obsText = e.target.textContent;
+                    const currentInput = scheduleObservationInput.value;
+                    scheduleObservationInput.value = currentInput ? `${currentInput}, ${obsText}` : obsText;
+                    scheduleObservationInput.focus();
+                }
+            });
+
+            addGradeBtn.addEventListener('click', () => { addGrade(); triggerSave(); });
+            addProspectBtn.addEventListener('click', () => { addProspectRow(); triggerSave(); });
+            
+            document.getElementById('grades-container').addEventListener('input', () => triggerSave());
+            prospectsTableBody.addEventListener('input', () => triggerSave());
+            
+            modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) modalOverlay.style.display = 'none'; });
+            
+            document.getElementById('prospects-export-btn').addEventListener('click', (e) => { e.stopPropagation(); generateImage(document.getElementById('prospects-table'), 'prospecção.jpg'); });
+            document.getElementById('schedule-export-btn').addEventListener('click', (e) => { e.stopPropagation(); generateImage(document.getElementById('schedule-grid'), 'cronograma_semanal.jpg'); });
+
+            // --- INICIALIZAÇÃO ---
+            createScheduleGrid();
+            loadData();
+        });
+    </script>
+</body>
+</html>
